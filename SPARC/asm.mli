@@ -10,6 +10,8 @@ and exp =
   | Neg of Id.t
   | Add of Id.t * id_or_imm
   | Sub of Id.t * id_or_imm
+  | Mul of Id.t * id_or_imm
+  | Div of Id.t * id_or_imm
   | SLL of Id.t * id_or_imm
   | Ld of Id.t * id_or_imm
   | St of Id.t * Id.t * id_or_imm
@@ -19,6 +21,15 @@ and exp =
   | FSubD of Id.t * Id.t
   | FMulD of Id.t * Id.t
   | FDivD of Id.t * Id.t
+  | FFloor of Id.t
+  | FSqrt of Id.t
+  | FAbs of Id.t
+  | Ftoi of Id.t
+  | Itof of Id.t
+  | Read_int of unit
+  | Read_float of unit
+  | Print_int of Id.t
+  | Print_char of Id.t
   | LdDF of Id.t * id_or_imm
   | StDF of Id.t * Id.t * id_or_imm
   | Comment of string
