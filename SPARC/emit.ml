@@ -69,12 +69,12 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
   | NonTail(x), Sub(y, z') ->
     (match z' with
     |V(r) -> Printf.fprintf oc "\tsub\t%s, %s, %s\n" x y r(*レジスタの場合はsub*)
-    |C(i) -> Printf.fprintf oc "\tsubi\t%s, %s, %d\n"x y i)(*即値の場合はsubi*)
-  | Nontail(x), Mul(y, z') ->
+    |C(i) -> Printf.fprintf oc "\taddi\t%s, %s, %d\n"x y (-i))(*即値の場合はsubi*)
+  | NonTail(x), Mul(y, z') ->
     (match z' with
     |V(r) -> assert false
     |C(i) -> Printf.fprintf oc "\tsll\t%s, %s, %d\n"x y (log2 i))
-  | Nontail(x), Div(y, z') ->
+  | NonTail(x), Div(y, z') ->
     (match z' with
     |V(r) -> assert false
     |C(i) -> Printf.fprintf oc "\tsra\t%s, %s, %d\n"x y (log2 i))
@@ -99,12 +99,12 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
   | NonTail(x), FSubD(y, z) -> Printf.fprintf oc "\tsubf\t%s, %s, %s\n" x y z
   | NonTail(x), FMulD(y, z) -> Printf.fprintf oc "\tmulf\t%s, %s, %s\n" x y z
   | NonTail(x), FDivD(y, z) -> Printf.fprintf oc "\tdivf\t%s, %s, %s\n" x y z
-  | NonTail(x), FFloor(y) -> Printf.fprintf oc "\tsubf\t%s, %s\n" reg_ftemp y reg_f05;
+  | NonTail(x), FFloor(y) -> Printf.fprintf oc "\tsubf\t%s, %s, %s\n" reg_ftemp y reg_f05;
                              Printf.fprintf oc "\tround.w.fmt\t%s, %s\n" reg_ftemp reg_ftemp;
                              Printf.fprintf oc "\tcvt.s.w\t%s, %s\n" x reg_ftemp
   | NonTail(x), FSqrt(y) -> Printf.fprintf oc "\tsqrt\t%s, %s\n" x y
   | NonTail(x), FAbs(y) -> Printf.fprintf oc "\tabs\t%s, %s\n" x y
-  | NonTail(x), Ftoi(y) -> Printf.fprintf oc "\tsubf\t%s, %s\n" reg_ftemp y reg_f05;
+  | NonTail(x), Ftoi(y) -> Printf.fprintf oc "\tsubf\t%s, %s, %s\n" reg_ftemp y reg_f05;
                            Printf.fprintf oc "\tround.w.fmt\t%s, %s\n" reg_ftemp reg_ftemp;
                            Printf.fprintf oc "\tmfc1\t%s, %s\n" y reg_ftemp
   | NonTail(x), Itof(y) -> Printf.fprintf oc "\tmfc2\t%s, %s\n" reg_ftemp y;
@@ -172,10 +172,10 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
   | Tail, IfLE(x, y', e1, e2) ->
       (match y' with
       | V(r) ->
-        Printf.fprintf oc "\tsgt\t%s, %s, %s\n" x reg_cond r;
+        Printf.fprintf oc "\tsgt\t%s, %s, %s\n" reg_cond x r;
         g'_tail_if Int oc reg_zero reg_cond e1 e2 "beq" "bne"
       | C(i) ->
-        Printf.fprintf oc "\tsgti\t%s, %s, %d\n" x reg_cond i;
+        Printf.fprintf oc "\tsgti\t%s, %s, %d\n" reg_cond x i;
         g'_tail_if Int oc reg_zero reg_cond e1 e2 "beq" "bne"
       )
   | Tail, IfGE(x, y', e1, e2) ->
@@ -236,7 +236,9 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
       let ss = stacksize () in
       Printf.fprintf oc "\tsw\t%s, %d(%s)\n" reg_ra (ss - 4) reg_sp  ; (*リターンアドレスを退避*)
       Printf.fprintf oc "\tlw\t%s, 0(%s)\n" reg_sw reg_cl; (*わからん*)
+      Printf.fprintf oc "\taddi\t%s, %s, %d\n" reg_sp reg_sp ss;
       Printf.fprintf oc "\tjal\t%s\n" reg_sw; (*関数呼び出し*)
+      Printf.fprintf oc "\taddi\t%s, %s, %d\n" reg_sp reg_sp (-ss);
       (*Printf.fprintf oc "\taddi\t%s, %s, %d\t! delay slot\n" reg_sp reg_sp ss; (*わからん*)
       Printf.fprintf oc "\tsubi\t%s, %s, %d\n" reg_sp reg_sp ss;*)(*わからん*)
       Printf.fprintf oc "\tlw\t%s, %d(%s)\n" reg_ra (ss - 4) reg_sp;(*リターンアドレスの復帰*)
@@ -248,7 +250,9 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
       g'_args oc [] ys zs;
       let ss = stacksize () in
       Printf.fprintf oc "\tsw\t%s, %d(%s)\n" reg_ra (ss - 4) reg_sp;(*リターンアドレスを退避*)
+      Printf.fprintf oc "\taddi\t%s, %s, %d\n" reg_sp reg_sp ss;
       Printf.fprintf oc "\tjal\t%s\n" x;(*関数呼び出し*)
+      Printf.fprintf oc "\taddi\t%s, %s, %d\n" reg_sp reg_sp (-ss);
       (*Printf.fprintf oc "\tadd\t%s, %d, %s\t! delay slot\n" reg_sp ss reg_sp;(*わからん*)
       Printf.fprintf oc "\tsub\t%s, %d, %s\n" reg_sp ss reg_sp;*)(*わからん*)
       Printf.fprintf oc "\tlw\t%s, %d(%s)\n" reg_ra (ss - 4) reg_sp;(*リターンアドレスの復帰*)
