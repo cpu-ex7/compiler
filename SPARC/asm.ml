@@ -12,6 +12,8 @@ and exp = (* ���İ��Ĥ�̿�����б����뼰 (caml2html
   | Neg of Id.t (**)
   | Add of Id.t * id_or_imm (*Int��Add*)
   | Sub of Id.t * id_or_imm (*Int��Sub*)
+  | Mul of Id.t * id_or_imm
+  | Div of Id.t * id_or_imm
   | SLL of Id.t * id_or_imm (*Shift left logical*)
   | Ld of Id.t * id_or_imm (*Int��Load*)
   | St of Id.t * Id.t * id_or_imm (**)
@@ -21,6 +23,15 @@ and exp = (* ���İ��Ĥ�̿�����б����뼰 (caml2html
   | FSubD of Id.t * Id.t
   | FMulD of Id.t * Id.t
   | FDivD of Id.t * Id.t
+  | FFloor of Id.t
+  | FSqrt of Id.t
+  | FAbs of Id.t
+  | Ftoi of Id.t
+  | Itof of Id.t
+  | Read_int of unit
+  | Read_float of unit
+  | Print_int of Id.t
+  | Print_char of Id.t
   | LdDF of Id.t * id_or_imm
   | StDF of Id.t * Id.t * id_or_imm
   | Comment of string
@@ -45,19 +56,24 @@ let seq(e1, e2) = Let((Id.gentmp Type.Unit, Type.Unit), e1, e2)
 let regs = (* Array.init 16 (fun i -> Printf.sprintf "%%r%d" i) *)(*26個*)
   [| "$v0"; "$v1"; "$a0"; "$a1";
      "$a2"; "$a3"; "$t0"; "$t1"; "$t2"; "$t3"; "$t4"; "$t5";
-     "$t6"; "$t7"; "$s0"; "$s1"; "$s2"; "$s3"; "$s4"; "$s5"; "$s6"; "$s7"; "$t8"; "$t9"; "$k0"|]
-let fregs = Array.init 31 (fun i -> Printf.sprintf "$f%d" i)(*浮動小数点レジスタは$f0〜$f30*)
+     "$t6"; "$t7"; "$s0"; "$s1"; "$s2"; "$s3"; "$s4"; "$s5"; "$s6"; "$s7"; "$t8"; "$t9" |]
+let fregs = Array.init 28 (fun i -> Printf.sprintf "$f%d" i)(*浮動小数点レジスタは$f0〜$f30*)
 let allregs = Array.to_list regs
 let allfregs = Array.to_list fregs
 let reg_zero = "$zero" (*zero register*)
 let reg_cl = regs.(Array.length regs - 1) (* closure address (caml2html: sparcasm_regcl) *)
 let reg_sw = regs.(Array.length regs - 2) (* temporary for swap *)
 let reg_fsw = fregs.(Array.length fregs - 1) (* temporary for swap *)
+let reg_temp = "$k0"
 let reg_sp = "$sp" (* stack pointer *)
 let reg_hp = "$at" (* heap pointer (caml2html: sparcasm_reghp) *)
 let reg_ra = "$ra" (* return address *)
 let reg_cond = "$k1" (*condition register*)
 let reg_fcond = "$f31" (*floating condition register*)
+let reg_f0 = "$f30"
+let reg_f05 = "$f29"
+let reg_fpi = "$f28"
+let reg_ftemp = "$f27"
 let is_reg x = (x.[0] = '$')
 
 (* super-tenuki *)
@@ -70,9 +86,9 @@ let rec remove_and_uniq xs = function
 let fv_id_or_imm = function V(x) -> [x] | _ -> []
 
 let rec fv_exp = function
-  | Nop | Set(_) | SetL(_) | Comment(_) | Restore(_) -> []
-  | Mov(x) | Neg(x) | FMovD(x) | FNegD(x) | Save(x, _) -> [x]
-  | Add(x, y') | Sub(x, y') | SLL(x, y') | Ld(x, y') | LdDF(x, y') -> x :: fv_id_or_imm y'
+  | Nop | Set(_) | SetL(_) | Comment(_) | Restore(_) | Read_int(_) | Read_float(_) -> []
+  | Mov(x) | Neg(x) | FMovD(x) | FNegD(x) | FFloor(x) | FSqrt(x) | FAbs(x) | Ftoi(x) | Itof(x) | Print_int(x) | Print_char(x) | Save(x, _) -> [x]
+  | Add(x, y') | Sub(x, y') | Mul(x, y') |Div(x, y') | SLL(x, y') | Ld(x, y') | LdDF(x, y') -> x :: fv_id_or_imm y'
   | St(x, y, z') | StDF(x, y, z') -> x :: y :: fv_id_or_imm z'
   | FAddD(x, y) | FSubD(x, y) | FMulD(x, y) | FDivD(x, y) -> [x; y]
   | IfEq(x, y', e1, e2) | IfLE(x, y', e1, e2) | IfGE(x, y', e1, e2) -> x :: fv_id_or_imm y' @ remove_and_uniq S.empty (fv e1 @ fv e2) (* uniq here just for efficiency *)
@@ -101,6 +117,8 @@ let rec string_of_asmexp e =
   |Neg(s) -> "Neg("^s^")"
   |Add(s1,e1) -> "Add("^s1^","^(string_of_idimm e1)^")"
   |Sub(s1,e1) -> "Sub("^s1^","^(string_of_idimm e1)^")"
+  |Mul(s1,e1) -> "Mul("^s1^","^(string_of_idimm e1)^")"
+  |Div(s1,e1) -> "Div("^s1^","^(string_of_idimm e1)^")"
   |Ld(s1,e1) -> "Ld("^s1^","^(string_of_idimm e1)^")"
   |St(s1,s2,e1) -> "St("^s1^","^s2^","^(string_of_idimm e1)^")"
   |SLL(s1,e1) -> "SLL("^s1^","^(string_of_idimm e1)^")"
@@ -110,6 +128,17 @@ let rec string_of_asmexp e =
   |FSubD(s1,s2) -> "FSubD("^s1^","^s2^")"
   |FMulD(s1,s2) -> "FMulD("^s1^","^s2^")"
   |FDivD(s1,s2) -> "FDivD("^s1^","^s2^")"
+  |FMovD(s) -> "FMovD("^s^")"
+  |FNegD(s) -> "FNegD("^s^")"
+  |FFloor(s) -> "FFloor("^s^")"
+  |FSqrt(s) -> "FSqrt("^s^")"
+  |FAbs(s) -> "FAbs("^s^")"
+  |Ftoi(s) -> "Ftoi("^s^")"
+  |Itof(s) -> "Itof("^s^")"
+  |Read_int(_) -> "Read_int()"
+  |Read_float(_) -> "Read_float()"
+  |Print_int(s) -> "Print_int("^s^")"
+  |Print_char(s) -> "Print_char("^s^")"
   |LdDF(s1,e1) -> "LdDF("^s1^","^(string_of_idimm e1)^")"
   |StDF(s1,s2,e1) -> "StDF("^s1^","^s2^","^(string_of_idimm e1)^")"
   |Comment(s) -> "Comment("^s^")"

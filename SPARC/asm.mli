@@ -52,6 +52,11 @@ val reg_hp : Id.t
 val reg_sp : Id.t
 val reg_cond : Id.t
 val reg_fcond : Id.t
+val reg_f0 : Id.t
+val reg_f05 : Id.t
+val reg_fpi : Id.t
+val reg_temp : Id.t
+val reg_ftemp : Id.t
 val is_reg : Id.t -> bool
 
 val fv : t -> Id.t list

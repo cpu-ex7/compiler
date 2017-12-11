@@ -6,6 +6,8 @@ external getlo : float -> int32 = "getlo"
 *)(*float->singleに伴い不要*)
 type mode = Int | Float
 
+let rec log2 x = if(x < 1) then -1 else if(x = 1) then 0 else log2 (x/2) + 1
+
 let stackset = ref S.empty (* すでにSaveされた変数の集合 (caml2html: emit_stackset) *)
 let stackmap = ref [] (* Saveされた変数の、スタックにおける位置 *)
 let save x = (*save xの処理は汎用レジスタも浮動小数点レジスタも共通*)
@@ -68,6 +70,14 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
     (match z' with
     |V(r) -> Printf.fprintf oc "\tsub\t%s, %s, %s\n" x y r(*レジスタの場合はsub*)
     |C(i) -> Printf.fprintf oc "\tsubi\t%s, %s, %d\n"x y i)(*即値の場合はsubi*)
+  | Nontail(x), Mul(y, z') ->
+    (match z' with
+    |V(r) -> assert false
+    |C(i) -> Printf.fprintf oc "\tsll\t%s, %s, %d\n"x y (log2 i))
+  | Nontail(x), Div(y, z') ->
+    (match z' with
+    |V(r) -> assert false
+    |C(i) -> Printf.fprintf oc "\tsra\t%s, %s, %d\n"x y (log2 i))
   | NonTail(x), SLL(y, z') ->
     (match z' with
     |V(r) -> Printf.fprintf oc "\tsllv\t%s, %s, %s\n" x y r(*レジスタの場合はsllv*)
@@ -85,19 +95,34 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
   | NonTail(x), FMovD(y) when x = y -> ()(*同じレジスタ同士は何もしない*)
   | NonTail(x), FMovD(y) -> Printf.fprintf oc "\tfmv\t%s, %s\n" x y;
   | NonTail(x), FNegD(y) -> Printf.fprintf oc "\tfnegs\t%s, %s\n" x y;(*TODO:ハードで実装するか？浮動小数点0レジスタがない*)
-  | NonTail(x), FAddD(y, z) -> Printf.fprintf oc "\tfadd\t%s, %s, %s\n" x y z
-  | NonTail(x), FSubD(y, z) -> Printf.fprintf oc "\tfsub\t%s, %s, %s\n" x y z
-  | NonTail(x), FMulD(y, z) -> Printf.fprintf oc "\tfmul\t%s, %s, %s\n" x y z
-  | NonTail(x), FDivD(y, z) -> Printf.fprintf oc "\tfdiv\t%s, %s, %s\n" x y z
+  | NonTail(x), FAddD(y, z) -> Printf.fprintf oc "\taddf\t%s, %s, %s\n" x y z
+  | NonTail(x), FSubD(y, z) -> Printf.fprintf oc "\tsubf\t%s, %s, %s\n" x y z
+  | NonTail(x), FMulD(y, z) -> Printf.fprintf oc "\tmulf\t%s, %s, %s\n" x y z
+  | NonTail(x), FDivD(y, z) -> Printf.fprintf oc "\tdivf\t%s, %s, %s\n" x y z
+  | NonTail(x), FFloor(y) -> Printf.fprintf oc "\tsubf\t%s, %s\n" reg_ftemp y reg_f05;
+                             Printf.fprintf oc "\tround.w.fmt\t%s, %s\n" reg_ftemp reg_ftemp;
+                             Printf.fprintf oc "\tcvt.s.w\t%s, %s\n" x reg_ftemp
+  | NonTail(x), FSqrt(y) -> Printf.fprintf oc "\tsqrt\t%s, %s\n" x y
+  | NonTail(x), FAbs(y) -> Printf.fprintf oc "\tabs\t%s, %s\n" x y
+  | NonTail(x), Ftoi(y) -> Printf.fprintf oc "\tsubf\t%s, %s\n" reg_ftemp y reg_f05;
+                           Printf.fprintf oc "\tround.w.fmt\t%s, %s\n" reg_ftemp reg_ftemp;
+                           Printf.fprintf oc "\tmfc1\t%s, %s\n" y reg_ftemp
+  | NonTail(x), Itof(y) -> Printf.fprintf oc "\tmfc2\t%s, %s\n" reg_ftemp y;
+                           Printf.fprintf oc "\tcvt.s.w\t%s, %s\n" x reg_ftemp
+  | NonTail(x), Read_int(_) -> Printf.fprintf oc "\tlwc2\t%s\n" x
+  | NonTail(x), Read_float(_) -> Printf.fprintf oc "\tlwc2\t%s\n" reg_temp;
+                                 Printf.fprintf oc "\tmfc2\t%s, %s\n" x reg_temp
+  | NonTail(_), Print_int(y) -> Printf.fprintf oc "\tswc2\t%s\n" y(*TODO: ちゃんと呼ばれるなら真面目に実装*)
+  | NonTail(_), Print_char(y) -> Printf.fprintf oc "\tswc2\t%s\n" y
   | NonTail(x), LdDF(y, z') ->
   (match z' with
-  |V(r) -> Printf.fprintf oc "\tadd\t%s, %s, %s\n" reg_sw y r;
-           Printf.fprintf oc "\tlwc1\t%s, %d(%s)\n" x 0 reg_sw
+  |V(r) -> Printf.fprintf oc "\tadd\t%s, %s, %s\n" reg_temp y r;
+           Printf.fprintf oc "\tlwc1\t%s, %d(%s)\n" x 0 reg_temp
   |C(i) -> Printf.fprintf oc "\tlwc1\t%s, %d(%s)\n" x i y)(*浮動小数点レジスタへはlwc1*)
   | NonTail(_), StDF(x, y, z') ->
   (match z' with
-  |V(r) -> Printf.fprintf oc "\tadd\t%s, %s, %s\n" reg_sw y r;
-           Printf.fprintf oc "\tswc1\t%s, %d(%s)\n" x 0 reg_sw
+  |V(r) -> Printf.fprintf oc "\tadd\t%s, %s, %s\n" reg_temp y r;
+           Printf.fprintf oc "\tswc1\t%s, %d(%s)\n" x 0 reg_temp
   |C(i) -> Printf.fprintf oc "\tswc1\t%s, %d(%s)\n" x i y)(*浮動小数点レジスタへはswc1*)
   | NonTail(_), Comment(s) -> Printf.fprintf oc "\t! %s\n" s
   (* 退避の仮想命令の実装(caml2html: emit_save) *)
@@ -116,15 +141,15 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
       assert (List.mem x allfregs);
       Printf.fprintf oc "\tlwc1\t%s, %d(%s)\n" x (offset y) reg_sp
   (* 末尾だったら計算結果を第一レジスタにセットしてret (caml2html: emit_tailret) *)
-  | Tail, (Nop | St _ | StDF _ | Comment _ | Save _ as exp) ->
+  | Tail, (Nop | St _ | StDF _ | Comment _ | Print_int _ | Print_char _ | Save _ as exp) ->
       g' oc (NonTail(Id.gentmp Type.Unit), exp);
       Printf.fprintf oc "\tjr\t$ra\n";(*$raに保存されているリターンアドレスに復帰*)
       (*Printf.fprintf oc "\tnop\n"*)(*必要かわからん*)
-  | Tail, (Set _ | SetL _ | Mov _ | Neg _ | Add _ | Sub _ | SLL _ | Ld _ as exp) ->
+  | Tail, (Set _ | SetL _ | Mov _ | Neg _ | Add _ | Sub _ | SLL _ | Mul _ | Div _ | Ftoi _ | Read_int _ | Ld _ as exp) ->
       g' oc (NonTail(regs.(0)), exp);(*戻り値は$v0(regs.(0))*)
       Printf.fprintf oc "\tjr\t$ra\n";
       (*Printf.fprintf oc "\tnop\n"*)
-  | Tail, (FMovD _ | FNegD _ | FAddD _ | FSubD _ | FMulD _ | FDivD _ | LdDF _ as exp) ->
+  | Tail, (FMovD _ | FNegD _ | FAddD _ | FSubD _ | FMulD _ | FDivD _ | FFloor _ | FSqrt _ | FAbs _ | Itof _ | Read_float _ | LdDF _ as exp) ->
       g' oc (NonTail(fregs.(0)), exp);(*戻り値は$f0(regs.(0))*)
       Printf.fprintf oc "\tjr\t$ra\n";
       (*Printf.fprintf oc "\tnop\n"*)
