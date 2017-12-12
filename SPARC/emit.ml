@@ -100,19 +100,20 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
   | NonTail(x), FMulD(y, z) -> Printf.fprintf oc "\tmulf\t%s, %s, %s\n" x y z
   | NonTail(x), FDivD(y, z) -> Printf.fprintf oc "\tdivf\t%s, %s, %s\n" x y z
   | NonTail(x), FFloor(y) -> Printf.fprintf oc "\tsubf\t%s, %s, %s\n" reg_ftemp y reg_f05;
-                             Printf.fprintf oc "\tround.w.fmt\t%s, %s\n" reg_ftemp reg_ftemp;
+                             Printf.fprintf oc "\troundwfmt\t%s, %s\n" reg_ftemp reg_ftemp;
                              Printf.fprintf oc "\tcvt.s.w\t%s, %s\n" x reg_ftemp
   | NonTail(x), FSqrt(y) -> Printf.fprintf oc "\tsqrt\t%s, %s\n" x y
   | NonTail(x), FAbs(y) -> Printf.fprintf oc "\tabs\t%s, %s\n" x y
   | NonTail(x), Ftoi(y) -> Printf.fprintf oc "\tsubf\t%s, %s, %s\n" reg_ftemp y reg_f05;
-                           Printf.fprintf oc "\tround.w.fmt\t%s, %s\n" reg_ftemp reg_ftemp;
+                           Printf.fprintf oc "\troundwfmt\t%s, %s\n" reg_ftemp reg_ftemp;
                            Printf.fprintf oc "\tmfc1\t%s, %s\n" y reg_ftemp
   | NonTail(x), Itof(y) -> Printf.fprintf oc "\tmfc2\t%s, %s\n" reg_ftemp y;
-                           Printf.fprintf oc "\tcvt.s.w\t%s, %s\n" x reg_ftemp
+                           Printf.fprintf oc "\tcvtsw\t%s, %s\n" x reg_ftemp
   | NonTail(x), Read_int(_) -> Printf.fprintf oc "\tlwc2\t%s\n" x
   | NonTail(x), Read_float(_) -> Printf.fprintf oc "\tlwc2\t%s\n" reg_temp;
                                  Printf.fprintf oc "\tmfc2\t%s, %s\n" x reg_temp
-  | NonTail(_), Print_int(y) -> Printf.fprintf oc "\tswc2\t%s\n" y(*TODO: ちゃんと呼ばれるなら真面目に実装*)
+  | NonTail(_), Print_int(y) -> Printf.fprintf oc "\taddi\t%s, %s, %d\n" reg_temp y 48;
+                                Printf.fprintf oc "\tswc2\t%s\n" reg_temp(*TODO: 0~9しか対応してない、ちゃんと呼ばれるなら真面目に実装*)
   | NonTail(_), Print_char(y) -> Printf.fprintf oc "\tswc2\t%s\n" y
   | NonTail(x), LdDF(y, z') ->
   (match z' with
@@ -163,7 +164,7 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
   | Tail, (Restore(x,t) as exp) ->
     (match t with
     |Float -> g' oc (NonTail(fregs.(0)), exp)
-    |_ -> g' oc (NonTail(fregs.(0)), exp));
+    |_ -> g' oc (NonTail(regs.(0)), exp));
     Printf.fprintf oc "\tjr\t$ra\n";
   | Tail, IfEq(x, y', e1, e2) -> (*IfEqは即値最適化はしない*)
       (match y' with
@@ -317,17 +318,31 @@ let f oc (Prog(data, fundefs, e)) =
   (*Printf.fprintf oc ".section\t\".rodata\"\n";
   Printf.fprintf oc ".align\t8\n";*)
   List.iter
-    (fun (Id.L(x), d) ->
+    (*(fun (Id.L(x), d) ->
       Printf.fprintf oc "%s:\t! %f\n" x d;
-      Printf.fprintf oc "\t.long\t0x%lx\n" (Int32.bits_of_float d))
+      Printf.fprintf oc "\t.long\t0x%lx\n" (Int32.bits_of_float d))*)
+    (fun (Id.L(x), d) ->
+      Printf.fprintf oc "#%s:\t! %f\n" x d;
+      let d_bit = Int32.bits_of_float d in
+      Printf.fprintf oc "\tlui\t%s, %s\n" reg_temp (Int32.to_string (Int32.shift_right_logical d_bit 16));
+      Printf.fprintf oc "\tori\t%s, %s, %s\n" reg_temp reg_temp (Int32.to_string (Int32.shift_right_logical (Int32.shift_left d_bit 16) 16));
+      Printf.fprintf oc "\tsw\t%s, %s, %s\n" reg_temp reg_zero x)
     data;
-  (*Printf.fprintf oc ".section\t\".text\"\n";*)
-  List.iter (fun fundef -> h oc fundef) fundefs;
-  (*Printf.fprintf oc ".global\tmin_caml_start\n";*)
+    (*Printf.fprintf oc "\tsave\t%%sp, -112, %%sp\n";*) (* from gcc; why 112? *)
+
   Printf.fprintf oc "min_caml_start:\n";
-  (*Printf.fprintf oc "\tsave\t%%sp, -112, %%sp\n";*) (* from gcc; why 112? *)
   stackset := S.empty;
   stackmap := [];
   g oc (NonTail("$g0"), e);
   Printf.fprintf oc "\tjr\t%s\n" reg_ra;
-  Printf.fprintf oc "\thlt\n"
+  Printf.fprintf oc "\thlt\n";
+  (*Printf.fprintf oc ".section\t\".text\"\n";*)
+  List.iter (fun fundef -> h oc fundef) fundefs
+  (*Printf.fprintf oc ".global\tmin_caml_start\n";*)
+  (*Printf.fprintf oc "min_caml_start:\n";*)
+  (*Printf.fprintf oc "\tsave\t%%sp, -112, %%sp\n";*) (* from gcc; why 112? *)
+  (*stackset := S.empty;
+  stackmap := [];
+  g oc (NonTail("$g0"), e);
+  Printf.fprintf oc "\tjr\t%s\n" reg_ra;
+  Printf.fprintf oc "\thlt\n"*)
