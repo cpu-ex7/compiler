@@ -1,1 +1,1 @@
-SPARC/libmincaml.S
+MIPS/libmincaml.S

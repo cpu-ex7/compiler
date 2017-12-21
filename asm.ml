@@ -1,1 +1,1 @@
-SPARC/asm.ml
+MIPS/asm.ml

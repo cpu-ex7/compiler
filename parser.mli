@@ -2,9 +2,20 @@ type token =
   | BOOL of (bool)
   | INT of (int)
   | FLOAT of (float)
+  | FABS
+  | FSQRT
+  | FTOI
+  | ITOF
+  | READ_INT
+  | READ_FLOAT
+  | PRINT_CHAR
+  | PRINT_INT
+  | FLOOR
   | NOT
   | MINUS
   | PLUS
+  | MUL
+  | DIV
   | MINUS_DOT
   | PLUS_DOT
   | AST_DOT

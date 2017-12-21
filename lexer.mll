@@ -1,10 +1,10 @@
 {
-(* lexerдм═°═╤д╣ды╩╤┐Їбв┤╪┐Їбв╖┐д╩д╔д╬─ъ╡┴ *)
+(* lexerя┐╜я┐╜я┐╜я┐╜я┐╜╤дя┐╜я┐╜я┐╜я┐╜╤┐я┐╜я┐╜я┐╜я┐╜╪┐я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜╩д╔дя┐╜я┐╜я┐╜я┐╜я┐╜ *)
 open Parser
 open Type
 }
 
-(* └╡╡м╔╜╕╜д╬╬м╡н *)
+(* я┐╜я┐╜я┐╜я┐╜╔╜я┐╜я┐╜я┐╜я┐╜╬мя┐╜я┐╜ *)
 let space = [' ' '\t' '\n' '\r']
 let digit = ['0'-'9']
 let lower = ['a'-'z']
@@ -14,7 +14,7 @@ rule token = parse
 | space+
     { token lexbuf }
 | "(*"
-    { comment lexbuf; (* е═е╣е╚д╖д┐е│есеєе╚д╬д┐дсд╬е╚еъе├еп *)
+    { comment lexbuf; (* я┐╜═ея┐╜я┐╜╚дя┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜╚д╬дя┐╜я┐╜я┐╜я┐╜╬е╚ея┐╜я┐╜├ея┐╜ *)
       token lexbuf }
 | '('
     { LPAREN }
@@ -26,14 +26,28 @@ rule token = parse
     { BOOL(false) }
 | "not"
     { NOT }
-| digit+ (* └░┐ЇдЄ╗·╢ч▓Є└╧д╣дыеыб╝еы (caml2html: lexer_int) *)
+| digit+ (* я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜╧дя┐╜я┐╜я┐╜я┐╜ыб╝я┐╜я┐╜ (caml2html: lexer_int) *)
     { INT(int_of_string (Lexing.lexeme lexbuf)) }
 | digit+ ('.' digit*)? (['e' 'E'] ['+' '-']? digit+)?
     { FLOAT(float_of_string (Lexing.lexeme lexbuf)) }
-| '-' (* -.дшдъ╕х▓єд╖д╦д╖д╩дпд╞дт╬╔дд? ║╟─╣░ь├╫? *)
+| "fabs"         { FABS       }
+| "abs_float"    { FABS       } (* уБйуБбуВЙуБошбишиШуБзуВВOK *)
+| "fsqrt"        { FSQRT      }
+| "sqrt"         { FSQRT      } (* уБйуБбуВЙуБошбишиШуБзуВВOK *)
+| "float_of_int" { ITOF       }
+| "int_of_float" { FTOI       }
+| "read_int"     { READ_INT   }
+| "read_float"   { READ_FLOAT }
+| "print_char"   { PRINT_CHAR }
+| "print_byte"   { PRINT_CHAR } (* уБйуБбуВЙуБошбишиШуБзуВВOK *)
+| "print_int"    { PRINT_INT  }
+| "floor"        { FLOOR      }
+| '-' (* -.я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜єд╖д╦дя┐╜я┐╜╩дя┐╜я┐╜╞дя┐╜я┐╜╔дя┐╜? я┐╜я┐╜─╣я┐╜я┐╜я┐╜я┐╜? *)
     { MINUS }
-| '+' (* +.дшдъ╕х▓єд╖д╦д╖д╩дпд╞дт╬╔дд? ║╟─╣░ь├╫? *)
+| '+' (* +.я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜єд╖д╦дя┐╜я┐╜╩дя┐╜я┐╜╞дя┐╜я┐╜╔дя┐╜? я┐╜я┐╜─╣я┐╜я┐╜я┐╜я┐╜? *)
     { PLUS }
+| '*'     { MUL }
+| '/'     { DIV }
 | "-."
     { MINUS_DOT }
 | "+."
@@ -80,7 +94,7 @@ rule token = parse
     { SEMICOLON }
 | eof
     { EOF }
-| lower (digit|lower|upper|'_')* (* ┬╛д╬б╓═╜╠є╕ьб╫дшдъ╕хд╟д╩ддд╚ддд▒д╩дд *)
+| lower (digit|lower|upper|'_')* (* ┬╛я┐╜╬бя┐╜═╜я┐╜я┐╜я┐╜я┐╜я┐╜╫дя┐╜я┐╜я┐╜я┐╜я┐╜я┐╜╟д╩дя┐╜я┐╜╚дя┐╜я┐╜я┐╜я┐╜╩дя┐╜ *)
     { IDENT(Lexing.lexeme lexbuf) }
 | _
     { failwith

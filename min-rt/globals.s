@@ -1,1 +1,1 @@
-SPARC/globals.s
+MIPS/globals.s

@@ -1,9 +1,1 @@
-let rec f x y =
-  x + y in
-let rec g x y =
-  let z = f x y in
-  f z z in
-let rec h x y =
-  let z = g x y in
-  g z z in
-print_int (h 2 3)
+let rec f x = if(x < 2.3) then 1 else 0 in print_int(f 3.1)

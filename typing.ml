@@ -8,7 +8,7 @@ exception Error of t * Type.t * Type.t
 let extenv = ref M.empty
 
 (* for pretty printing (and type normalization) *)
-let rec deref_typ = function (* ·¿ÊÑ¿ô¤òÃæ¿È¤Ç¤ª¤­¤«¤¨¤ë´Ø¿ô (caml2html: typing_deref) *)
+let rec deref_typ = function (* ï¿½ï¿½ï¿½Ñ¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¤Ç¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø¿ï¿½ (caml2html: typing_deref) *)
   | Type.Fun(t1s, t2) -> Type.Fun(List.map deref_typ t1s, deref_typ t2)
   | Type.Tuple(ts) -> Type.Tuple(List.map deref_typ ts)
   | Type.Array(t) -> Type.Array(deref_typ t)
@@ -58,7 +58,7 @@ let rec occur r1 = function (* occur check (caml2html: typing_occur) *)
   | Type.Var({ contents = Some(t2) }) -> occur r1 t2
   | _ -> false
 
-let rec unify t1 t2 = (* ·¿¤¬¹ç¤¦¤è¤¦¤Ë¡¢·¿ÊÑ¿ô¤Ø¤ÎÂåÆþ¤ò¤¹¤ë (caml2html: typing_unify) *)
+let rec unify t1 t2 = (* ï¿½ï¿½ï¿½ï¿½ï¿½ç¤¦ï¿½è¤¦ï¿½Ë¡ï¿½ï¿½ï¿½ï¿½Ñ¿ï¿½ï¿½Ø¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ò¤¹¤ï¿½ (caml2html: typing_unify) *)
   match t1, t2 with
   | Type.Unit, Type.Unit | Type.Bool, Type.Bool | Type.Int, Type.Int | Type.Float, Type.Float -> ()
   | Type.Fun(t1s, t1'), Type.Fun(t2s, t2') ->
@@ -72,7 +72,7 @@ let rec unify t1 t2 = (* ·¿¤¬¹ç¤¦¤è¤¦¤Ë¡¢·¿ÊÑ¿ô¤Ø¤ÎÂåÆþ¤ò¤¹¤ë (caml2html: typing
   | Type.Var(r1), Type.Var(r2) when r1 == r2 -> ()
   | Type.Var({ contents = Some(t1') }), _ -> unify t1' t2
   | _, Type.Var({ contents = Some(t2') }) -> unify t1 t2'
-  | Type.Var({ contents = None } as r1), _ -> (* °ìÊý¤¬Ì¤ÄêµÁ¤Î·¿ÊÑ¿ô¤Î¾ì¹ç (caml2html: typing_undef) *)
+  | Type.Var({ contents = None } as r1), _ -> (* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¤ï¿½ï¿½ï¿½ï¿½ï¿½Î·ï¿½ï¿½Ñ¿ï¿½ï¿½Î¾ï¿½ï¿½ï¿½ (caml2html: typing_undef) *)
       if occur r1 t2 then raise (Unify(t1, t2));
       r1 := Some(t2)
   | _, Type.Var({ contents = None } as r2) ->
@@ -80,7 +80,7 @@ let rec unify t1 t2 = (* ·¿¤¬¹ç¤¦¤è¤¦¤Ë¡¢·¿ÊÑ¿ô¤Ø¤ÎÂåÆþ¤ò¤¹¤ë (caml2html: typing
       r2 := Some(t1)
   | _, _ -> raise (Unify(t1, t2))
 
-let rec g env e = (* ·¿¿äÏÀ¥ë¡¼¥Á¥ó (caml2html: typing_g) *)
+let rec g env e = (* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë¡¼ï¿½ï¿½ï¿½ï¿½ (caml2html: typing_g) *)
   try
     match e with
     | Unit -> Type.Unit
@@ -93,7 +93,7 @@ let rec g env e = (* ·¿¿äÏÀ¥ë¡¼¥Á¥ó (caml2html: typing_g) *)
     | Neg(e) ->
         unify Type.Int (g env e);
         Type.Int
-    | Add(e1, e2) | Sub(e1, e2) -> (* Â­¤·»»¡Ê¤È°ú¤­»»¡Ë¤Î·¿¿äÏÀ (caml2html: typing_add) *)
+    | Add(e1, e2) | Sub(e1, e2) -> (* Â­ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤È°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤Î·ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: typing_add) *)
         unify Type.Int (g env e1);
         unify Type.Int (g env e2);
         Type.Int
@@ -113,21 +113,21 @@ let rec g env e = (* ·¿¿äÏÀ¥ë¡¼¥Á¥ó (caml2html: typing_g) *)
         let t3 = g env e3 in
         unify t2 t3;
         t2
-    | Let((x, t), e1, e2) -> (* let¤Î·¿¿äÏÀ (caml2html: typing_let) *)
+    | Let((x, t), e1, e2) -> (* letï¿½Î·ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: typing_let) *)
         unify t (g env e1);
         g (M.add x t env) e2
-    | Var(x) when M.mem x env -> M.find x env (* ÊÑ¿ô¤Î·¿¿äÏÀ (caml2html: typing_var) *)
+    | Var(x) when M.mem x env -> M.find x env (* ï¿½Ñ¿ï¿½ï¿½Î·ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: typing_var) *)
     | Var(x) when M.mem x !extenv -> M.find x !extenv
-    | Var(x) -> (* ³°ÉôÊÑ¿ô¤Î·¿¿äÏÀ (caml2html: typing_extvar) *)
+    | Var(x) -> (* ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¿ï¿½ï¿½Î·ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: typing_extvar) *)
         Format.eprintf "free variable %s assumed as external@." x;
         let t = Type.gentyp () in
         extenv := M.add x t !extenv;
         t
-    | LetRec({ name = (x, t); args = yts; body = e1 }, e2) -> (* let rec¤Î·¿¿äÏÀ (caml2html: typing_letrec) *)
+    | LetRec({ name = (x, t); args = yts; body = e1 }, e2) -> (* let recï¿½Î·ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: typing_letrec) *)
         let env = M.add x t env in
         unify t (Type.Fun(List.map snd yts, g (M.add_list yts env) e1));
         g env e2
-    | App(e, es) -> (* ´Ø¿ôÅ¬ÍÑ¤Î·¿¿äÏÀ (caml2html: typing_app) *)
+    | App(e, es) -> (* ï¿½Ø¿ï¿½Å¬ï¿½Ñ¤Î·ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: typing_app) *)
         let t = Type.gentyp () in
         unify (g env e) (Type.Fun(List.map (g env) es, t));
         t
@@ -148,6 +148,40 @@ let rec g env e = (* ·¿¿äÏÀ¥ë¡¼¥Á¥ó (caml2html: typing_g) *)
         unify (Type.Array(t)) (g env e1);
         unify Type.Int (g env e2);
         Type.Unit
+
+(* è‡ªç­ã®ã‚¢ãƒ¼ã‚­ãƒ†ã‚¯ãƒãƒ£ç”¨ã«è¿½åŠ ã—ãŸã‚‚ã® *)
+    | Mul  (e1, e2)
+    | Div  (e1, e2) -> unify Type.Int   (g env e1); unify Type.Int   (g env e2); Type.Int
+(* ç‰¹æ®Šé–¢æ•°ã§ã¯å¼•æ•°ã®æ•°ã®ãƒã‚§ãƒƒã‚¯ã‚‚è¡Œã† *)
+    | Fabs e'
+    | Fsqrt e'
+    | Floor e' ->
+      if List.length e' <> 1
+      then failwith @@ "Too many arguments : "
+      else unify Type.Float (g env (List.hd e')); Type.Float
+    | FtoI e' ->
+      if List.length e' <> 1
+      then failwith @@ "Too many arguments : "
+      else unify Type.Float (g env (List.hd e')); Type.Int
+    | ItoF e' ->
+      if List.length e' <> 1
+      then failwith @@ "Too many arguments : "
+      else unify Type.Int (g env (List.hd e')); Type.Float
+    | ReadInt e' ->
+      if List.length e' <> 1
+      then failwith @@ "Too many arguments : "
+      else unify Type.Unit (g env (List.hd e')); Type.Int
+    | ReadFloat e' ->
+      if List.length e' <> 1
+      then failwith @@ "Too many arguments : "
+      else unify Type.Unit (g env (List.hd e')); Type.Float
+    | PrintChar e' ->
+      if List.length e' <> 1
+      then failwith @@ "Too many arguments : "
+      else unify Type.Int (g env (List.hd e')); Type.Unit
+    | PrintInt e' ->       if List.length e' <> 1
+      then failwith @@ "Too many arguments : " 
+      else unify Type.Int (g env (List.hd e')); Type.Unit
   with Unify(t1, t2) -> raise (Error(deref_term e, deref_typ t1, deref_typ t2))
 
 let f e =

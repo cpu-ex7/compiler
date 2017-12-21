@@ -1,16 +1,27 @@
 %{
-(* parser¤¬ÍøÍÑ¤¹¤ëÊÑ¿ô¡¢´Ø¿ô¡¢·¿¤Ê¤É¤ÎÄêµÁ *)
+(* parserï¿½ï¿½ï¿½ï¿½ï¿½Ñ¤ï¿½ï¿½ï¿½ï¿½Ñ¿ï¿½ï¿½ï¿½ï¿½Ø¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤É¤ï¿½ï¿½ï¿½ï¿½ï¿½ *)
 open Syntax
 let addtyp x = (x, Type.gentyp ())
 %}
 
-/* (* »ú¶ç¤òÉ½¤¹¥Ç¡¼¥¿·¿¤ÎÄêµÁ (caml2html: parser_token) *) */
+/* (* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: parser_token) *) */
 %token <bool> BOOL
 %token <int> INT
 %token <float> FLOAT
+%token FABS
+%token FSQRT
+%token FTOI
+%token ITOF
+%token READ_INT
+%token READ_FLOAT
+%token PRINT_CHAR
+%token PRINT_INT
+%token FLOOR
 %token NOT
 %token MINUS
 %token PLUS
+%token MUL
+%token DIV
 %token MINUS_DOT
 %token PLUS_DOT
 %token AST_DOT
@@ -37,7 +48,7 @@ let addtyp x = (x, Type.gentyp ())
 %token RPAREN
 %token EOF
 
-/* (* Í¥Àè½ç°Ì¤Èassociativity¤ÎÄêµÁ¡ÊÄã¤¤Êý¤«¤é¹â¤¤Êý¤Ø¡Ë (caml2html: parser_prior) *) */
+/* (* Í¥ï¿½ï¿½ï¿½ï¿½ï¿½Ì¤ï¿½associativityï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ã¤¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â¤¤ï¿½ï¿½ï¿½Ø¡ï¿½ (caml2html: parser_prior) *) */
 %nonassoc IN
 %right prec_let
 %right SEMICOLON
@@ -46,19 +57,19 @@ let addtyp x = (x, Type.gentyp ())
 %nonassoc prec_tuple
 %left COMMA
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
-%left PLUS MINUS PLUS_DOT MINUS_DOT
+%left PLUS MINUS PLUS_DOT MINUS_DOT MUL DIV
 %left AST_DOT SLASH_DOT
 %right prec_unary_minus
 %left prec_app
 %left DOT
 
-/* (* ³«»Ïµ­¹æ¤ÎÄêµÁ *) */
+/* (* ï¿½ï¿½ï¿½Ïµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ *) */
 %type <Syntax.t> exp
 %start exp
 
 %%
 
-simple_exp: /* (* ³ç¸Ì¤ò¤Ä¤±¤Ê¤¯¤Æ¤â´Ø¿ô¤Î°ú¿ô¤Ë¤Ê¤ì¤ë¼° (caml2html: parser_simple) *) */
+simple_exp: /* (* ï¿½ï¿½ï¿½Ì¤ï¿½ï¿½Ä¤ï¿½ï¿½Ê¤ï¿½ï¿½Æ¤ï¿½ï¿½Ø¿ï¿½ï¿½Î°ï¿½ï¿½ï¿½ï¿½Ë¤Ê¤ï¿½ï¿½ë¼° (caml2html: parser_simple) *) */
 | LPAREN exp RPAREN
     { $2 }
 | LPAREN RPAREN
@@ -74,21 +85,34 @@ simple_exp: /* (* ³ç¸Ì¤ò¤Ä¤±¤Ê¤¯¤Æ¤â´Ø¿ô¤Î°ú¿ô¤Ë¤Ê¤ì¤ë¼° (caml2html: parser_simp
 | simple_exp DOT LPAREN exp RPAREN
     { Get($1, $4) }
 
-exp: /* (* °ìÈÌ¤Î¼° (caml2html: parser_exp) *) */
+exp: /* (* ï¿½ï¿½ï¿½Ì¤Î¼ï¿½ (caml2html: parser_exp) *) */
 | simple_exp
     { $1 }
+| FABS actual_args                   %prec prec_app   { Fabs ($2)     }
+| FSQRT actual_args                  %prec prec_app   { Fsqrt($2)     }
+| FTOI actual_args                   %prec prec_app   { FtoI($2)      }
+| ITOF actual_args                   %prec prec_app   { ItoF($2)      }
+| READ_INT actual_args               %prec prec_app   { ReadInt($2)   }
+| READ_FLOAT actual_args             %prec prec_app   { ReadFloat($2) }
+| PRINT_CHAR actual_args             %prec prec_app   { PrintChar($2) }
+| PRINT_INT actual_args              %prec prec_app   { PrintInt($2)  }
+| FLOOR actual_args                  %prec prec_app   { Floor($2)     }
 | NOT exp
     %prec prec_app
     { Not($2) }
 | MINUS exp
     %prec prec_unary_minus
     { match $2 with
-    | Float(f) -> Float(-.f) (* -1.23¤Ê¤É¤Ï·¿¥¨¥é¡¼¤Ç¤Ï¤Ê¤¤¤Î¤ÇÊÌ°·¤¤ *)
+    | Float(f) -> Float(-.f) (* -1.23ï¿½Ê¤É¤Ï·ï¿½ï¿½ï¿½ï¿½é¡¼ï¿½Ç¤Ï¤Ê¤ï¿½ï¿½Î¤ï¿½ï¿½Ì°ï¿½ï¿½ï¿½ *)
     | e -> Neg(e) }
-| exp PLUS exp /* (* Â­¤·»»¤ò¹½Ê¸²òÀÏ¤¹¤ë¥ë¡¼¥ë (caml2html: parser_add) *) */
+| exp PLUS exp /* (* Â­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¸ï¿½ï¿½ï¿½Ï¤ï¿½ï¿½ï¿½ï¿½ë¡¼ï¿½ï¿½ (caml2html: parser_add) *) */
     { Add($1, $3) }
 | exp MINUS exp
     { Sub($1, $3) }
+| exp MUL exp
+    { Mul ($1, $3)    }
+| exp DIV exp
+    { Div ($1, $3)    }
 | exp EQUAL exp
     { Eq($1, $3) }
 | exp LESS_GREATER exp

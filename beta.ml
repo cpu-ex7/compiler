@@ -1,8 +1,8 @@
 open KNormal
 
-let find x env = try M.find x env with Not_found -> x (* ÃÖ´¹¤Î¤¿¤á¤Î´Ø¿ô (caml2html: beta_find) *)
+let find x env = try M.find x env with Not_found -> x (* ï¿½Ö´ï¿½ï¿½Î¤ï¿½ï¿½ï¿½ï¿½Î´Ø¿ï¿½ (caml2html: beta_find) *)
 
-let rec g env = function (* ¦Â´ÊÌó¥ë¡¼¥Á¥óËÜÂÎ (caml2html: beta_g) *)
+let rec g env = function (* ï¿½Â´ï¿½ï¿½ï¿½ï¿½ë¡¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: beta_g) *)
   | Unit -> Unit
   | Int(i) -> Int(i)
   | Float(d) -> Float(d)
@@ -16,7 +16,7 @@ let rec g env = function (* ¦Â´ÊÌó¥ë¡¼¥Á¥óËÜÂÎ (caml2html: beta_g) *)
   | FDiv(x, y) -> FDiv(find x env, find y env)
   | IfEq(x, y, e1, e2) -> IfEq(find x env, find y env, g env e1, g env e2)
   | IfLE(x, y, e1, e2) -> IfLE(find x env, find y env, g env e1, g env e2)
-  | Let((x, t), e1, e2) -> (* let¤Î¦Â´ÊÌó (caml2html: beta_let) *)
+  | Let((x, t), e1, e2) -> (* letï¿½Î¦Â´ï¿½ï¿½ï¿½ (caml2html: beta_let) *)
       (match g env e1 with
       | Var(y) ->
           Format.eprintf "beta-reducing %s = %s@." x y;
@@ -26,7 +26,7 @@ let rec g env = function (* ¦Â´ÊÌó¥ë¡¼¥Á¥óËÜÂÎ (caml2html: beta_g) *)
           Let((x, t), e1', e2'))
   | LetRec({ name = xt; args = yts; body = e1 }, e2) ->
       LetRec({ name = xt; args = yts; body = g env e1 }, g env e2)
-  | Var(x) -> Var(find x env) (* ÊÑ¿ô¤òÃÖ´¹ (caml2html: beta_var) *)
+  | Var(x) -> Var(find x env) (* ï¿½Ñ¿ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ (caml2html: beta_var) *)
   | Tuple(xs) -> Tuple(List.map (fun x -> find x env) xs)
   | LetTuple(xts, y, e) -> LetTuple(xts, find y env, g env e)
   | Get(x, y) -> Get(find x env, find y env)
@@ -34,5 +34,16 @@ let rec g env = function (* ¦Â´ÊÌó¥ë¡¼¥Á¥óËÜÂÎ (caml2html: beta_g) *)
   | App(g, xs) -> App(find g env, List.map (fun x -> find x env) xs)
   | ExtArray(x) -> ExtArray(x)
   | ExtFunApp(x, ys) -> ExtFunApp(x, List.map (fun y -> find y env) ys)
+  | Mul(x, y) -> Mul (find x env, find y env)
+  | Div(x, y) -> Div (find x env, find y env)
+  | Fabs(x) -> Fabs(find x env)
+  | Fsqrt(x) -> Fsqrt(find x env)
+  | Floor(x) -> Floor(find x env)
+  | FtoI(x) -> FtoI(find x env)
+  | ItoF(x) -> ItoF(find x env)
+  | ReadInt(x) -> ReadInt(find x env)
+  | ReadFloat(x) -> ReadFloat(find x env)
+  | PrintChar(x) -> PrintChar(find x env)
+  | PrintInt(x) -> PrintInt(find x env)
 
 let f = g M.empty

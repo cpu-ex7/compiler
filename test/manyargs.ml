@@ -1,1 +1,1 @@
-SPARC/manyargs.ml
+MIPS/manyargs.ml

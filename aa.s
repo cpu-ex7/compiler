@@ -2,38 +2,53 @@
 .align	8
 l.24:	! 0.000000
 	.long	0x0
+	.long	0x0
 l.22:	! 10.000000
-	.long	0x41200000
+	.long	0x0
+	.long	0x40240000
 l.20:	! 1.000000
-	.long	0x3f800000
+	.long	0x0
+	.long	0x3ff00000
 l.18:	! 0.200000
-	.long	0x3e4ccccd
+	.long	0x9999999a
+	.long	0x3fc99999
 .section	".text"
 mul.8:
-	addi	$v0, $zero, l.18
-	lwc1	$f2, 0($v0)
-	fcondle	$f2, $f0
-	bc1f	bc1t_else.27
-	addi	$v0, $zero, l.20
-	lwc1	$f2, 0($v0)
-	fsub	$f2, $f0, $f2
-	fadd	$f1, $f0, $f1
-	fmv	$f0, $f2
-	j	mul.8
-bc1t_else.27:
-	fmv	$f0, $f1
-	jr	$ra
+	set	l.18, %i2
+	ldd	[%i2 + 0], %f4
+	fcmpd	%f4, %f0
+	nop
+	fbg	fble_else.27
+	nop
+	set	l.20, %i2
+	ldd	[%i2 + 0], %f4
+	fsubd	%f0, %f4, %f4
+	faddd	%f0, %f2, %f2
+	fmovs	%f4, %f0
+	fmovs	%f5, %f1
+	b	mul.8
+	nop
+fble_else.27:
+	fmovs	%f2, %f0
+	fmovs	%f3, %f1
+	retl
+	nop
 .global	min_caml_start
 min_caml_start:
-	addi	$v0, $zero, l.22
-	lwc1	$f0, 0($v0)
-	addi	$v0, $zero, l.24
-	lwc1	$f1, 0($v0)
-	sw	$ra, 0($sp)
-	jal	mul.8
-	lw	$ra, 0($sp)
-	sw	$ra, 0($sp)
-	jal	min_caml_print_float
-	lw	$ra, 0($sp)
-	jr	$ra
-	hlt
+	save	%sp, -112, %sp
+	set	l.22, %i2
+	ldd	[%i2 + 0], %f0
+	set	l.24, %i2
+	ldd	[%i2 + 0], %f2
+	st	%o7, [%i0 + 4]
+	call	mul.8
+	add	%i0, 8, %i0	! delay slot
+	sub	%i0, 8, %i0
+	ld	[%i0 + 4], %o7
+	st	%o7, [%i0 + 4]
+	call	min_caml_print_float
+	add	%i0, 8, %i0	! delay slot
+	sub	%i0, 8, %i0
+	ld	[%i0 + 4], %o7
+	ret
+	restore

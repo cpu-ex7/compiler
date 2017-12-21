@@ -1,1 +1,1 @@
-SPARC/toomanyargs.ml
+MIPS/toomanyargs.ml

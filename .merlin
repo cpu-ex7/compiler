@@ -1,0 +1,3 @@
+B _build/default
+FLG -open MinCaml -g float.o -ccopt -O3 -cclib -O3 float.o
+PKG str

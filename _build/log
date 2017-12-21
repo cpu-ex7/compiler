@@ -1,0 +1,86 @@
+# jbuilder build main.exe
+# OCAMLPARAM: unset
+# Workspace root: /home/admin2/Desktop/min-caml-master-2
+$ /home/admin2/.opam/system/bin/ocamlfind printconf path > /tmp/jbuild554951.output
+$ /usr/bin/ocamlc -config > /tmp/jbuild816c7f.output
+# Jbuilder context:
+#  ((name default)
+#   (kind default)
+#   (merlin true)
+#   (for_host ())
+#   (build_dir _build/default)
+#   (toplevel_path (/home/admin2/.opam/system/lib/toplevel))
+#   (ocaml_bin /usr/bin)
+#   (ocaml /usr/bin/ocaml)
+#   (ocamlc /usr/bin/ocamlc)
+#   (ocamlopt (/usr/bin/ocamlopt))
+#   (ocamldep /usr/bin/ocamldep)
+#   (ocamlmklib /usr/bin/ocamlmklib)
+#   (env ())
+#   (findlib_path (/home/admin2/.opam/system/lib))
+#   (arch_sixtyfour true)
+#   (natdynlink_supported true)
+#   (opam_vars ())
+#   (ocamlc_config
+#    ((architecture amd64)
+#     (asm as)
+#     (asm_cfi_supported true)
+#     (ast_impl_magic_number Caml1999M016)
+#     (ast_intf_magic_number Caml1999N015)
+#     (bytecomp_c_compiler
+#      "gcc -O  -D_FILE_OFFSET_BITS=64 -D_REENTRANT -O -fPIC")
+#     (bytecomp_c_libraries "-lm  -ldl -lcurses -lpthread")
+#     (cc_profile -pg)
+#     (ccomp_type cc)
+#     (cma_magic_number Caml1999A011)
+#     (cmi_magic_number Caml1999I017)
+#     (cmo_magic_number Caml1999O010)
+#     (cmt_magic_number Caml2012T004)
+#     (cmx_magic_number Caml1999Y014)
+#     (cmxa_magic_number Caml1999Z013)
+#     (cmxs_magic_number Caml2007D002)
+#     (default_executable_name a.out)
+#     (exec_magic_number Caml1999X011)
+#     (ext_asm .s)
+#     (ext_dll .so)
+#     (ext_lib .a)
+#     (ext_obj .o)
+#     (host x86_64-pc-linux-gnu)
+#     (model default)
+#     (native_c_compiler "gcc -O  -D_FILE_OFFSET_BITS=64 -D_REENTRANT")
+#     (native_c_libraries "-lm  -ldl")
+#     (native_pack_linker "ld -r --hash-style=both --as-needed --build-id -o ")
+#     (os_type Unix)
+#     (ranlib ranlib)
+#     (standard_library /usr/lib/ocaml)
+#     (standard_library_default /usr/lib/ocaml)
+#     (standard_runtime /usr/bin/ocamlrun)
+#     (system linux)
+#     (systhread_supported true)
+#     (target x86_64-pc-linux-gnu)
+#     (version 4.02.3)
+#     (with_frame_pointers false)))
+#   (which
+#    ((ocamlc (/usr/bin/ocamlc))
+#     (ocamlfind (/home/admin2/.opam/system/bin/ocamlfind)))))
+$ (cd _build/default && /usr/bin/ocamldep -modules aa.ml alpha.ml anchor.ml asm.ml assoc.ml beta.ml closure.ml constFold.ml elim.ml emit.ml error.ml formatUtil.ml fromFile.ml fromString.ml id.ml inline.ml kNormal.ml lexer.ml m.ml main.ml mandelbrot.ml parser.ml regAlloc.ml s.ml simm.ml syntax.ml test.ml type.ml typing.ml virtual.ml) > _build/default/main.depends.ocamldep-output
+> File "virtual.ml", line 68, characters 2-5:
+> Warning 1: this is the start of a comment.
+$ (cd _build/default && /usr/bin/ocamldep -modules alpha.mli asm.mli assoc.mli beta.mli closure.mli constFold.mli elim.mli emit.mli inline.mli kNormal.mli main.mli parser.mli regAlloc.mli simm.mli typing.mli virtual.mli) > _build/default/main.dependsi.ocamldep-output
+$ (cd _build/default && /usr/bin/ocamlopt -ccopt -O3 -cclib -O3 float.o -inline 100 -I /usr/lib/ocaml -intf-suffix .ml -no-alias-deps -I . -o formatUtil.cmx -c -impl formatUtil.ml)
+$ (cd _build/default && /usr/bin/ocamlc -ccopt -O3 -cclib -O3 float.o -g -bin-annot -I /usr/lib/ocaml -no-alias-deps -I . -o typing.cmi -c -intf typing.mli)
+$ (cd _build/default && /usr/bin/ocamlc -ccopt -O3 -cclib -O3 float.o -g -bin-annot -I /usr/lib/ocaml -no-alias-deps -I . -o kNormal.cmi -c -intf kNormal.mli)
+$ (cd _build/default && /usr/bin/ocamlc -ccopt -O3 -cclib -O3 float.o -g -bin-annot -I /usr/lib/ocaml -no-alias-deps -I . -o error.cmo -c -impl error.ml)
+$ (cd _build/default && /usr/bin/ocamlc -ccopt -O3 -cclib -O3 float.o -g -bin-annot -I /usr/lib/ocaml -no-alias-deps -I . -o asm.cmi -c -intf asm.mli)
+$ (cd _build/default && /usr/bin/ocamlc -ccopt -O3 -cclib -O3 float.o -g -bin-annot -I /usr/lib/ocaml -no-alias-deps -I . -o alpha.cmi -c -intf alpha.mli)
+$ (cd _build/default && /usr/bin/ocamlc -ccopt -O3 -cclib -O3 float.o -g -bin-annot -I /usr/lib/ocaml -no-alias-deps -I . -o main.cmi -c -intf main.mli)
+$ (cd _build/default && /usr/bin/ocamlopt -ccopt -O3 -cclib -O3 float.o -inline 100 -I /usr/lib/ocaml -intf-suffix .ml -no-alias-deps -I . -o type.cmx -c -impl type.ml)
+> File "type.ml", line 1:
+> Error: The implementation type.ml does not match the interface type.cmi:
+>        The value `string_of_typeidlist' is required but not provided
+>        The value `string_of_typelist' is required but not provided
+>        The value `string_of_type' is required but not provided
+[2]
+$ (cd _build/default && /usr/bin/ocamlc -ccopt -O3 -cclib -O3 float.o -g -bin-annot -I /usr/lib/ocaml -no-alias-deps -I . -o assoc.cmi -c -intf assoc.mli)
+$ (cd _build/default && /usr/bin/ocamlc -ccopt -O3 -cclib -O3 float.o -g -bin-annot -I /usr/lib/ocaml -no-alias-deps -I . -o beta.cmi -c -intf beta.mli)
+$ (cd _build/default && /usr/bin/ocamlc -ccopt -O3 -cclib -O3 float.o -g -bin-annot -I /usr/lib/ocaml -no-alias-deps -I . -o closure.cmi -c -intf closure.mli)

@@ -1,1 +1,1 @@
-SPARC/regAlloc.ml
+MIPS/regAlloc.ml

@@ -1,1 +1,1 @@
-Let(Ti113,Int,Set(10),Let(Ti212,Int,CallDir(L(fib10),[Ti113::],[]),Ans(CallDir(L(min_caml_print_int),[Ti212::],[]))))
+Let(Ti3.16,Int,Set(123),Let(Tu2.9,Unit,CallDir(L(min_caml_print_int),[Ti3.16::],[]),Let(Ti5.14,Int,Set(-456),Let(Tu1.10,Unit,CallDir(L(min_caml_print_int),[Ti5.14::],[]),Let(Ti8.11,Int,Set(789),Ans(CallDir(L(min_caml_print_int),[Ti8.11::],[])))))))

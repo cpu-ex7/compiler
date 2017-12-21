@@ -106,8 +106,7 @@ let rec concat e1 xt e2 =
   | Ans(exp) -> Let(xt, exp, e2)
   | Let(yt, exp, e1') -> Let(yt, exp, concat e1' xt e2)
 
-(*let align i = (if i mod 8 = 0 then i else i + 4)*) (*ワードアクセスへの変更、float->singleより不要に*)
-
+(*let align i = (if i mod 8 = 0 then i else i + 4)*) (*ワードアクセスへの変更、float->singleより不要に
 let rec string_of_asmexp e =
   match e with
   |Nop -> "Nop"
@@ -168,3 +167,4 @@ and string_of_idimm s =
 let string_of_prog p =
   match p with
   |Prog(_,fundefs,e) -> string_of_asm e
+*)

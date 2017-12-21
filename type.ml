@@ -10,7 +10,6 @@ type t = (* MinCaml�η���ɽ�������ǡ����� (caml2
 
 let gentyp () = Var(ref None) (* ���������ѿ������� *)
 
-
 let rec string_of_type t =
   match t with
   |Unit -> "Unit"

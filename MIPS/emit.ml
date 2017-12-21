@@ -93,7 +93,7 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
              Printf.fprintf oc "\tsw\t%s, %d(%s)\n" x 0 reg_sw
     |C(i) -> Printf.fprintf oc "\tsw\t%s, %d(%s)\n" x i y)(*汎用レジスタへはsw、z'がレジスタの時はその前でaddでアドレスを計算、結果はスワップレジスタに*)
   | NonTail(x), FMovD(y) when x = y -> ()(*同じレジスタ同士は何もしない*)
-  | NonTail(x), FMovD(y) -> Printf.fprintf oc "\tfmv\t%s, %s\n" x y;
+  | NonTail(x), FMovD(y) -> Printf.fprintf oc "\tmvf\t%s, %s\n" x y;
   | NonTail(x), FNegD(y) -> Printf.fprintf oc "\tfnegs\t%s, %s\n" x y;(*TODO:ハードで実装するか？浮動小数点0レジスタがない*)
   | NonTail(x), FAddD(y, z) -> Printf.fprintf oc "\taddf\t%s, %s, %s\n" x y z
   | NonTail(x), FSubD(y, z) -> Printf.fprintf oc "\tsubf\t%s, %s, %s\n" x y z
@@ -106,7 +106,7 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
   | NonTail(x), FAbs(y) -> Printf.fprintf oc "\tabs\t%s, %s\n" x y
   | NonTail(x), Ftoi(y) -> Printf.fprintf oc "\tsubf\t%s, %s, %s\n" reg_ftemp y reg_f05;
                            Printf.fprintf oc "\troundwfmt\t%s, %s\n" reg_ftemp reg_ftemp;
-                           Printf.fprintf oc "\tmfc1\t%s, %s\n" y reg_ftemp
+                           Printf.fprintf oc "\tmfc1\t%s, %s\n" x reg_ftemp
   | NonTail(x), Itof(y) -> Printf.fprintf oc "\tmfc2\t%s, %s\n" reg_ftemp y;
                            Printf.fprintf oc "\tcvtsw\t%s, %s\n" x reg_ftemp
   | NonTail(x), Read_int(_) -> Printf.fprintf oc "\tlwc2\t%s\n" x
@@ -189,10 +189,10 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
         g'_tail_if Int oc reg_zero reg_cond e1 e2 "beq" "bne"
       )
   | Tail, IfFEq(x, y, e1, e2) ->
-      Printf.fprintf oc "\tfcondeq\t%s, %s\n" x y;
+      Printf.fprintf oc "\teqf\t%s, %s\n" x y;
       g'_tail_if Float oc "$dummy" "$dummy" e1 e2 "bc1t" "bc1f"
   | Tail, IfFLE(x, y, e1, e2) ->
-      Printf.fprintf oc "\tfcondle\t%s, %s\n" x y;
+      Printf.fprintf oc "\tlef\t%s, %s\n" x y;
       g'_tail_if Float oc "$dummy" "$dummy" e1 e2 "bc1t" "bc1f"
   | NonTail(z), IfEq(x, y', e1, e2) ->
       (match y' with
@@ -217,10 +217,10 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
         g'_non_tail_if Int oc (NonTail(z)) reg_zero reg_cond e1 e2 "beq" "bne"
       )
   | NonTail(z), IfFEq(x, y, e1, e2) ->
-      Printf.fprintf oc "\tfcondeq\t%s, %s\n" x y;
+      Printf.fprintf oc "\teqf\t%s, %s\n" x y;
       g'_non_tail_if Float oc (NonTail(z)) "$dummy" "$dummy" e1 e2 "bc1t" "bc1f"
   | NonTail(z), IfFLE(x, y, e1, e2) ->
-      Printf.fprintf oc "\tfcondle\t%s, %s\n" x y;
+      Printf.fprintf oc "\tlef\t%s, %s\n" x y;
       g'_non_tail_if Float oc (NonTail(z)) "$dummy" "$dummy" e1 e2 "bc1t" "bc1f"
   (* 関数呼び出しの仮想命令の実装(caml2html: emit_call) *)
   | Tail, CallCls(x, ys, zs) -> (* 末尾呼び出し (caml2html: emit_tailcall) *)
@@ -246,7 +246,7 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
       if List.mem a allregs && a <> regs.(0) then
         Printf.fprintf oc "\taddi\t%s, %s, 0\n" a regs.(0)(*返り値をほしい場所に移動*)
       else if List.mem a allfregs && a <> fregs.(0) then
-        (Printf.fprintf oc "\tfmv\t%s, %s\n" a fregs.(0))(*返り値をほしい場所に移動*)
+        (Printf.fprintf oc "\tmvf\t%s, %s\n" a fregs.(0))(*返り値をほしい場所に移動*)
   | NonTail(a), CallDir(Id.L(x), ys, zs) ->
       g'_args oc [] ys zs;
       let ss = stacksize () in
@@ -260,7 +260,7 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprim
       if List.mem a allregs && a <> regs.(0) then
         Printf.fprintf oc "\taddi\t%s, %s, 0\n" a regs.(0)(*返り値をほしい場所に移動*)
       else if List.mem a allfregs && a <> fregs.(0) then
-        (Printf.fprintf oc "\tfmv\t%s, %s\n" a fregs.(0))(*返り値をほしい場所に移動*)
+        (Printf.fprintf oc "\tmvf\t%s, %s\n" a fregs.(0))(*返り値をほしい場所に移動*)
 and g'_tail_if mode oc reg1 reg2 e1 e2 b bn =
   let b_else = Id.genid (b ^ "_else") in
   (match mode with
@@ -304,7 +304,7 @@ and g'_args oc x_reg_cl ys zs =
       zs in
   List.iter
     (fun (z, fr) ->
-      Printf.fprintf oc "\tfmv\t%s, %s\n" fr z)
+      Printf.fprintf oc "\tmvf\t%s, %s\n" fr z)
     (shuffle reg_fsw zfrs)
 
 let h oc { name = Id.L(x); args = _; fargs = _; body = e; ret = _ } =
@@ -317,25 +317,37 @@ let f oc (Prog(data, fundefs, e)) =
   Format.eprintf "generating assembly...@.";
   (*Printf.fprintf oc ".section\t\".rodata\"\n";
   Printf.fprintf oc ".align\t8\n";*)
-  List.iter
+  let lastlabel = ref "0" in
+  (List.iter
     (*(fun (Id.L(x), d) ->
       Printf.fprintf oc "%s:\t! %f\n" x d;
       Printf.fprintf oc "\t.long\t0x%lx\n" (Int32.bits_of_float d))*)
     (fun (Id.L(x), d) ->
-      Printf.fprintf oc "#%s:\t! %f\n" x d;
+      Printf.fprintf oc "%s:\n" x;
+      Printf.fprintf oc "#!%f\n" d;
       let d_bit = Int32.bits_of_float d in
+      Printf.fprintf oc "\taddi\t%s, %s, %d\n" reg_temp reg_zero 0;
       Printf.fprintf oc "\tlui\t%s, %s\n" reg_temp (Int32.to_string (Int32.shift_right_logical d_bit 16));
       Printf.fprintf oc "\tori\t%s, %s, %s\n" reg_temp reg_temp (Int32.to_string (Int32.shift_right_logical (Int32.shift_left d_bit 16) 16));
-      Printf.fprintf oc "\tsw\t%s, %s, %s\n" reg_temp reg_zero x)
-    data;
-    (*Printf.fprintf oc "\tsave\t%%sp, -112, %%sp\n";*) (* from gcc; why 112? *)
+      Printf.fprintf oc "\tsw\t%s, %s(%s)\n" reg_temp x reg_zero;
+      lastlabel := x)
+    data);
 
+    Printf.fprintf oc "\taddi\t%s, %s, %s\n" reg_sp reg_zero (!lastlabel);
+    Printf.fprintf oc "\taddi\t%s, %s, %d\n" reg_sp reg_sp 4;
+    Printf.fprintf oc "\taddi\t%s, %s, %d\n" reg_hp reg_sp 2048;
+    Printf.fprintf oc "\taddi\t%s, %s, %d\n" reg_temp reg_zero 0;
+    Printf.fprintf oc "\tlui\t%s, %s\n" reg_temp (Int32.to_string (Int32.shift_right_logical (Int32.bits_of_float 0.5) 16));
+    Printf.fprintf oc "\tori\t%s, %s, %s\n" reg_temp reg_temp (Int32.to_string (Int32.shift_right_logical (Int32.shift_left (Int32.bits_of_float 0.5) 16) 16));
+    Printf.fprintf oc "\tmfc2\t%s, %s\n" reg_f05 reg_temp;
+    Printf.fprintf oc "\tmfc2\t%s, %s\n" reg_f0 reg_zero;
+    (*Printf.fprintf oc "\tsave\t%%sp, -112, %%sp\n";*) (* from gcc; why 112? *)
   Printf.fprintf oc "min_caml_start:\n";
   stackset := S.empty;
   stackmap := [];
   g oc (NonTail("$g0"), e);
-  Printf.fprintf oc "\tjr\t%s\n" reg_ra;
-  Printf.fprintf oc "\thlt\n";
+  (*Printf.fprintf oc "\tjr\t%s\n" reg_ra;*)
+  Printf.fprintf oc "\thalt\n";
   (*Printf.fprintf oc ".section\t\".text\"\n";*)
   List.iter (fun fundef -> h oc fundef) fundefs
   (*Printf.fprintf oc ".global\tmin_caml_start\n";*)

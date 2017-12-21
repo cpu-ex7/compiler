@@ -1,1 +1,1 @@
-SPARC/asm.mli
+MIPS/asm.mli

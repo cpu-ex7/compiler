@@ -1,1 +1,1 @@
-SPARC/simm.ml
+MIPS/simm.ml

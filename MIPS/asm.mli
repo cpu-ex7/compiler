@@ -74,5 +74,5 @@ val fv : t -> Id.t list
 val concat : t -> Id.t * Type.t -> t -> t
 
 (*val align : int -> int*)
-
-val string_of_prog : prog -> string
+(*
+val string_of_prog : prog -> string*)

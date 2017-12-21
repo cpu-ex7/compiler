@@ -1,1 +1,1 @@
-SPARC/Makefile
+MIPS/Makefile

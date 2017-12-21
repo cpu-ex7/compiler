@@ -1,4 +1,4 @@
-type t = (* MinCaml¤Î¹½Ê¸¤òÉ½¸½¤¹¤ë¥Ç¡¼¥¿·¿ (caml2html: syntax_t) *)
+type t = (* MinCamlï¿½Î¹ï¿½Ê¸ï¿½ï¿½É½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: syntax_t) *)
   | Unit
   | Bool of bool
   | Int of int
@@ -24,4 +24,15 @@ type t = (* MinCaml¤Î¹½Ê¸¤òÉ½¸½¤¹¤ë¥Ç¡¼¥¿·¿ (caml2html: syntax_t) *)
   | Array of t * t
   | Get of t * t
   | Put of t * t * t
+  | Mul of t * t
+  | Div of t * t
+  | Fabs of t list
+  | Fsqrt of t list
+  | Floor of t list
+  | FtoI of t list
+  | ItoF of t list
+  | ReadInt of t list
+  | ReadFloat of t list
+  | PrintChar of t list
+  | PrintInt of t list
 and fundef = { name : Id.t * Type.t; args : (Id.t * Type.t) list; body : t }
